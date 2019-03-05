@@ -1,0 +1,51 @@
+spring:
+
+#thymeleaf的配置
+  thymeleaf:
+    cache: false
+#数据源的配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource  #代表使用druid类型的数据源
+    username: root
+    password: 123456
+#此处改
+    url: jdbc:mysql://127.0.0.1:3306/app
+    initialSize: 3 
+    minIdle: 3 
+    maxActive: 30 
+    maxWait: 15000 
+    druid:
+      login-username: root
+      login-password: 123456
+      deny: '192.169.2.111'
+      allow: ''
+      exclusions: '*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*'
+      stat-view-servlet-url-pattern: /druid/*
+      web-stat-filter-url-pattern: /*
+      filters: stat,wall
+#设置编码
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+#mybatis的配置
+mybatis:
+#  config-location: classpath:mybatis.cfg.xml   #加载核心配置文件
+  mapper-locations:   #配置Mapper.xml的地址
+  - classpath:mapper/*.xml  
+    #mybaits的sql 和参数的日志输出
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  #项目日志配置
+logging:
+  level:    
+    root: WARM   #INFO  WARM   DEBUG  ERROR
+    org.springframework.web: DEBUG
+    com.sxt: ERROR
+#虚拟机未分盘去D：
+  file: /log/log/my.log   #日志的保存位置
+  pattern:   #日志的输入格式     时间   线程    级别   详细信息
+    console: '%d{yyyy/MM/dd-HH:mm:ss} [%thread] %-5level %logger- %msg%n'
+    file: '%d{yyyy/MM/dd-HH:mm} [%thread] %-5level %logger- %msg%n'
+server:
+  port: 8100

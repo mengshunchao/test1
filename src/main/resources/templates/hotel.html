@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>酒店管理NO.3</title>
+<!-- 引入layui -->
+<link rel="stylesheet" href="/resources/layui/css/layui.css" media="all">
+</head>
+<body class="childrenBody">
+<fieldset class="layui-elem-field layui-field-title">
+    <legend>查询条件</legend>
+</fieldset>
+<form class="layui-form" id="searchForm" method="post">
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label" >酒店名称:</label>
+            <div class="layui-input-inline">
+                <input type="text" name="name"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item" style="text-align: center;">
+        <a class="layui-btn search_btn" id="doSearch">查询</a>
+        <button type="reset" class="layui-btn layui-btn-warm">清空</button>
+    </div>
+</form>
+<table id="hotelList" lay-filter="hotelList"></table>
+<!--表格工具条-->
+<script type="text/html" id="tableToolBar">
+	<a class="layui-btn layui-btn layui-btn" lay-event="add">添加</a>
+</script>
+<!--操作-->
+<script type="text/html" id="hotelListBar">
+    <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
+</script>
+
+<!-- 添加和修改开始 -->
+<div id="dataFrmContent" style="padding: 10px;display: none;" >
+	<form class="layui-form" method="post" id="dataFrm" lay-filter="dataFrm" >
+		<div class="layui-form-item">
+		    <label class="layui-form-label">房间类型</label>
+		    <div class="layui-input-block">
+		      <input type="radio" name="type" value="1" title="标准间" checked="">
+		      <input type="radio" name="type" value="2" title="豪华间">
+		      <input type="radio" name="type" value="3" title="总统套间" >
+		    </div>
+  		</div>
+		<div class="layui-form-item">
+		    <div class="layui-inline">
+		      <label class="layui-form-label">房间价格</label>
+		      <div class="layui-input-inline">
+		        <input type="text" name="price" autocomplete="off" class="layui-input">
+		      </div>
+		    </div>
+		</div>
+		<div class="layui-form-item">
+		    <div class="layui-inline">
+		      <label class="layui-form-label">房间编号</label>
+		      <div class="layui-input-inline">
+		        <input type="text" name="roomid" autocomplete="off" class="layui-input">
+		      </div>
+		    </div>
+		</div>
+		<div class="layui-form-item">
+			<div class="layui-inline">
+			    <label class="layui-form-label">酒店名称</label>
+			    <div class="layui-input-block">
+			      <select name="hotelid" lay-filter="aihao">
+			        <option value="2">七天酒店</option>
+			        <option value="1">如家酒店</option>
+			        <option value="3">汉庭酒店</option>
+			        <option value="4">酷客酒店</option>
+			      </select>
+			    </div>
+		    </div>
+  		</div>
+		<div class="layui-form-item">
+		    <div class="layui-inline">
+		      <label class="layui-form-label">描述</label>
+		      <div class="layui-input-inline">
+		        <input type="text" name="info" autocomplete="off" class="layui-input">
+		      </div>
+		    </div>
+		</div>
+		
+		<div class="layui-form-item" style="text-align: center;">
+			<button class="layui-btn" lay-submit="" lay-filter="doSubmit">提交</button>
+			<button type="reset" class="layui-btn layui-btn-warm">重置</button>
+		</div>
+	</form>
+</div>
+<!-- 添加和修改结束 -->
+
+
+<script type="text/javascript" src="/resources/layui/layui.js"></script>
+</body>
+<script type="text/javascript">
+    var tableIns;
+    layui.use(['form','layer','table','laydate','layedit'],function(){
+        var form = layui.form,
+            layer = layui.layer,
+            $ = layui.jquery,
+            laydate=layui.laydate,
+            table = layui.table,
+            layedit=layui.layedit;
+        //酒店列表
+        tableIns = table.render({
+            elem: '#hotelList',
+            url : "/hotel/loadAllHotels",
+            cellMinWidth : 95,
+            toolbar: '#tableToolBar',
+            page : true,
+            height : "full-220",
+            limits : [10,15,20,25],
+            defaultToolbar: ['filter','print'],
+            limit : 10,
+            id : "hotelListTable",
+            cols : [ [
+                {field: 'hotelid', title: '酒店ID', minWidth:80, align:"center"},
+                {field: 'name', title: '酒店名称', minWidth:100, align:"center"},
+                {field: 'typename', title: '房间', minWidth:100, align:"center"},
+                {field: 'price', title: '价格',  align:'center'},
+                {field: 'mobile', title: '电话',  align:'center'},
+                {field: 'address', title: '地址',  align:'center'},
+                {title: '操作', minWidth:185, templet:'#hotelListBar',fixed:"right",align:"center"}
+            ] ]
+        });
+
+        //查询
+        $("#doSearch").click(function(){
+            var params=$("#searchForm").serialize();
+            table.reload('hotelListTable', {
+                url: '/hotel/loadAllHotels?'+params
+            });
+        });
+        //监听头工具栏事件
+        table.on('toolbar(hotelList)', function(obj){
+            switch(obj.event){
+	            case 'add':
+	               	toAddHotel();
+                	break;
+                case 'batchDel':
+                	batchDelete();
+                    break;
+            };
+        });
+
+        //打开 添加酒店的弹出层
+        var url="";
+        var mainIndex;
+        function toAddHotel(){
+            mainIndex = layer.open({
+                title : "添加酒店",
+                type : 1,//页面层
+                area:["800px","500px"],
+                content : $("#dataFrmContent"),
+                success : function(layero, index){
+                    setTimeout(function(){
+                        layui.layer.tips('点击此处返回酒店列表', '.layui-layer-setwin .layui-layer-close', {
+                            tips: 3
+                        });
+                    },500);
+                    $("#dataFrm")[0].reset();
+                    url="/hotel/addHotel"
+                }
+            })
+        }
+        //监听提交
+        form.on('submit(doSubmit)', function(data){
+        	//alert(url);此处url正确
+        	//layedit.sync(editIndex);此处错误
+            var params=$("#dataFrm").serialize();
+            alert(params);
+            $.post(url,params,function(obj){
+            	if(obj.code==200){
+    				//layer.msg(obj.msg);
+    				layer.close(mainIndex);
+    				//刷新表格
+    				$("#doSearch").click();
+    			}else{
+    				layer.msg(obj.msg);
+    			}
+            })
+            return false;
+        });
+        
+        //列表操作
+        table.on('tool(hotelList)', function(obj){
+            var layEvent = obj.event,
+                data = obj.data;
+            if(layEvent === 'edit'){ //编辑
+                updateHotel(data);//data主当前点击的行
+            }else if(layEvent === 'del'){ //删除
+                layer.confirm('确定删【'+data.roomid+'】房间吗？',{icon:3, title:'提示信息'},function(index){
+                    $.post("/hotel/deleteHotel?roomid="+data.roomid,{
+                        roomid : data.roomid  //将需要删除的id作为参数传入
+                    },function(data){
+                        //刷新table
+                        tableIns.reload();
+                        //关闭提示框
+                        layer.close(index);
+                    })
+                });
+            }
+        });
+    })
+    
+</script>
+</html>
